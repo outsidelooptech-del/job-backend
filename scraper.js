@@ -1,14 +1,11 @@
-import fetch from "node-fetch";
-import pkg from "pg";
-const { Pool } = pkg;
+const fetch = require("node-fetch");
+const { Pool } = require("pg");
 
-// 🔴 PUT YOUR NEON DB URL HERE
 const pool = new Pool({
-  connectionString: "YOUR_NEON_DB_URL",
+  connectionString: "postgresql://neondb_owner:npg_GdSTEZXgkL27@ep-green-shadow-an0gznda-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
   ssl: { rejectUnauthorized: false }
 });
 
-// ✅ LIST OF COMPANIES (start small)
 const companies = ["spotify", "airbnb", "stripe"];
 
 async function fetchAndInsert() {
@@ -23,7 +20,6 @@ async function fetchAndInsert() {
       console.log(`Found ${jobs.length} jobs`);
 
       for (let job of jobs) {
-
         try {
           await pool.query(
             `INSERT INTO jobs 
@@ -47,7 +43,7 @@ async function fetchAndInsert() {
       }
 
     } catch (err) {
-      console.log("Fetch error:", company);
+      console.log("Fetch error:", company, err.message);
     }
   }
 
