@@ -61,6 +61,23 @@ def normalize_apply_link(link):
     return link
 
 
+def normalize_posted_at(value):
+    if not value:
+        return None
+
+    value = str(value).strip()
+
+    # Accept only date/timestamp-like values:
+    # 2026-05-11
+    # 2026-05-11T10:30:00Z
+    if re.match(r"^\d{4}-\d{2}-\d{2}", value):
+        return value
+
+    # Ignore values like:
+    # Posted 30+ Days Ago, Today, Yesterday, 2 days ago
+    return None
+
+
 def slugify(text):
     if not text:
         return None
@@ -263,8 +280,16 @@ def save_job(job_data, cur):
         )
 
         work_mode = clean_text(job_data.get("work_mode")) or detect_work_mode(location)
-        job_type = clean_text(job_data.get("job_type")) or detect_job_type(title, keywords)
-        experience = clean_text(job_data.get("experience")) or detect_experience(title, keywords)
+
+        job_type = clean_text(job_data.get("job_type")) or detect_job_type(
+            title,
+            keywords
+        )
+
+        experience = clean_text(job_data.get("experience")) or detect_experience(
+            title,
+            keywords
+        )
 
         salary = clean_text(job_data.get("salary")) or "Not disclosed"
         education = clean_text(job_data.get("education")) or "Not specified"
@@ -281,7 +306,7 @@ def save_job(job_data, cur):
             or get_logo(company)
         )
 
-        posted_at = clean_text(job_data.get("posted_at"))
+        posted_at = normalize_posted_at(job_data.get("posted_at"))
 
         company_slug = (
             clean_text(job_data.get("company_slug"))
@@ -383,6 +408,11 @@ def save_job(job_data, cur):
         )
 
     except Exception as e:
+        try:
+            cur.connection.rollback()
+        except Exception:
+            pass
+
         print(
             f"❌ Failed saving job: "
             f"{job_data.get('title') or job_data.get('job_title')} | Error: {e}"
