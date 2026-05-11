@@ -1,0 +1,133 @@
+📍 100 MNC Companies for B.Tech Graduates in India
+
+(Alphabetical Order)
+
+Accenture India – IT & consulting -- Accenture2.py
+
+Adobe India – Software & creative tools -- Adobe.py
+
+AECOM – Engineering & infrastructure -- AECOM.py
+
+Airbus India – Aerospace & defense -- Airbus.py
+
+Alvarez & Marsal – Consulting & professional services -- AlvarezMarshal.py
+
+Amazon India – E-commerce / AWS -- Amazon.py
+
+AMD – Semiconductor / hardware -- AMD.py
+
+American Express India – Finance & technology -- AEXP.py
+
+Apple India – Product engineering / hardware -- Apple.py
+
+Atlassian – Software tools (Jira, Confluence) -- Atlassian.py
+
+Bain & Company India – Consulting -- BainCompany.py
+
+Bank of America – Finance & tech -- BankofAmerica.py
+
+BCG (Boston Consulting Group) – Consulting -- BCG.py
+
+Capgemini India – IT & consulting -- Capgemini.py
+
+Cisco Systems India – Networking & tech -- Cisco.py
+
+Cognizant Technology Solutions – IT services -- Cognizant.py
+
+Cummins India – Engineering & manufacturing -- Cummins.py
+
+CyberArk (or similar security) – Cybersecurity (indicative) -- 
+
+Dell Technologies (India) – Hardware & enterprise tech -- Dell.py
+
+Deloitte India – Consulting & advisory -- Deloitte.py
+
+DHL – Logistics & supply chain (global MNC) -- 
+
+DXC Technology / Kyndryl – IT services - DXC.py
+
+Ericsson India – Telecom & networking -- Ericcson.py
+
+EY India (Ernst & Young) – Consulting & audit -- EY.py
+
+Fidelity Investments India – Tech & finance -- Fidelity.py
+
+Flipkart (Walmart) – E-commerce tech -- Flipkart.py
+
+Google India – Product & cloud -- Google.py
+
+Goldman Sachs India – Finance engineering -- Goldmansach.py
+
+HCL Technologies (HCLTech) – IT & tech services -- Hcltech.py
+
+Hexaware Technologies – IT services -- Hexaware.py
+
+IBM India – IT & consulting -- Ibm.py
+
+Intel India – Semiconductor / engineering -- Intel.py
+
+Infosys – IT & consulting -- Infosys.py
+
+J.P. Morgan India – Finance & tech -- JPMorgan.py
+
+L&T (Larsen & Toubro) – Engineering & infrastructure -- LT.py
+
+LTIMindtree (LTI) – IT services
+
+Mahindra & Mahindra – Automotive & engineering -- Mahindra.py
+
+McKinsey & Company – Consulting -- Mckinsey.py (Bearer Token needed )
+
+Microsoft India – Product & cloud -- Microsoft.py
+
+Mphasis – IT services -- Mphasis.py
+
+Morgan Stanley India – Finance & tech -- MorganStanley.py
+
+Nestlé India – FMCG (corporate R&D & supply) -- Nestle.py
+
+NVIDIA India – AI & semiconductor -- Nvidia.py
+
+Oracle India – Enterprise software -- Oracle.py
+
+PayPal India – Fintech & tech -- Paypal.py
+
+PepsiCo India – FMCG / corporate jobs -- Pepsico.py
+
+Pfizer or Novartis (Pharma R&D) -– Pfizer.py
+
+Philips – Healthcare tech & engineering --Phillips.py
+
+PwC India – Consulting & audit -- PWC.py
+
+Qualcomm India – Semiconductor / R&D -- Qualcomm.py
+
+Razorpay – Fintech / product (global) -- Razorpay.py
+
+SAP Labs India – Enterprise software -- SAPlabs.py
+
+Samsung R&D India – Product & hardware -- Samsung.py 
+
+Siemens India – Industrial tech & automation -- Siemens.py
+
+Stripe India – Fintech -- Stripe.py
+
+Synopsys / Cadence – Chip design (indicative) -- Synopsis.py
+
+Tech Mahindra – IT & telecom -- TechM.py
+
+TCS -- TCS.py
+
+Uber India – Tech & product -- Uber.py
+
+Visa India – Fintech & payment tech -- Visa.py
+
+Walmart Global Tech India – Tech & retail -- Walmart.py
+
+Zoho Corporation – Product & cloud -- Zoho.py
+
+I have an idea of a new feature for my app in this feature what I want to implement is I want to list all the open jobs for around 60-70 companies for now on where users can select a company name and see jobs of that company also they can filter jobs based on keywords , location and experience so whats the best way to achieve this --- in my mind I think what I can do is write python script for each company that extract jobs from their website respectively and save them in an excel from where I upload all the jobs in the PostgreSQL and then create a api that list jobs in the app is this good way to do it or any other best idea exists ? 
+
+
+JPMC
+Nestle

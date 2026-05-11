@@ -1,0 +1,70 @@
+@echo off
+echo ============================================
+echo Running All Company Job Scrapers
+echo ============================================
+
+python Accenture.py
+python Adobe.py
+python AECOM.py
+python Airbus.py
+python AlvarezMarshal.py
+python Amazon.py
+python AMD.py
+python AEXP.py
+python Apple.py
+python Atlassian.py
+python BainCompany.py
+python BankofAmerica.py
+python BCG.py
+python Capgemini.py
+python Cisco.py
+python Cognizant.py
+python Cummins.py
+python Dell.py
+python Deloitte.py
+python DXC.py
+python Ericcson.py
+python EY.py
+python Fidelity.py
+python Flipkart.py
+python Google.py
+python Goldmansach.py
+python Hcltech.py
+python Hexaware.py
+python Ibm.py
+python Intel.py
+python Infosys.py
+python JPMorgan.py
+python LT.py
+python Mahindra.py
+python Mckinsey.py
+python Microsoft.py
+python Mphasis.py
+python MorganStanley.py
+python Nestle.py
+python Nvidia.py
+python Oracle.py
+python Paypal.py
+python Pepsico.py
+python Pfizer.py
+python Phillips.py
+python PWC.py
+python Qualcomm.py
+python Razorpay.py
+python SAPlabs.py
+python Samsung.py
+python Siemens.py
+python Stripe.py
+python Synopsis.py
+python TechM.py
+python TCS.py
+python Uber.py
+python Visa.py
+python Walmart.py
+python Zoho.py
+
+echo ============================================
+echo All Scrapers Finished!
+echo ============================================
+
+pause
