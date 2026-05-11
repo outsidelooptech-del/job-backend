@@ -1,68 +1,45 @@
 @echo off
+setlocal enabledelayedexpansion
+
 echo ============================================
 echo Running All Company Job Scrapers
 echo ============================================
 
-python Accenture.py
-python Adobe.py
-python AECOM.py
-python Airbus.py
-python AlvarezMarshal.py
-python Amazon.py
-python AMD.py
-python AEXP.py
-python Apple.py
-python Atlassian.py
-python BainCompany.py
-python BankofAmerica.py
-python BCG.py
-python Capgemini.py
-python Cisco.py
-python Cognizant.py
-python Cummins.py
-python Dell.py
-python Deloitte.py
-python DXC.py
-python Ericcson.py
-python EY.py
-python Fidelity.py
-python Flipkart.py
-python Google.py
-python Goldmansach.py
-python Hcltech.py
-python Hexaware.py
-python Ibm.py
-python Intel.py
-python Infosys.py
-python JPMorgan.py
-python LT.py
-python Mahindra.py
-python Mckinsey.py
-python Microsoft.py
-python Mphasis.py
-python MorganStanley.py
-python Nestle.py
-python Nvidia.py
-python Oracle.py
-python Paypal.py
-python Pepsico.py
-python Pfizer.py
-python Phillips.py
-python PWC.py
-python Qualcomm.py
-python Razorpay.py
-python SAPlabs.py
-python Samsung.py
-python Siemens.py
-python Stripe.py
-python Synopsis.py
-python TechM.py
-python TCS.py
-python Uber.py
-python Visa.py
-python Walmart.py
-python Zoho.py
+set SCRAPERS=Accenture.py Adobe.py AECOM.py Airbus.py AlvarezMarshal.py Amazon.py AMD.py AEXP.py Apple.py Atlassian.py BainCompany.py BankofAmerica.py BCG.py Capgemini.py Cisco.py Cognizant.py Cummins.py Dell.py Deloitte.py DXC.py Ericcson.py EY.py Fidelity.py Flipkart.py Google.py Goldmansach.py HclTech.py Hexaware.py Ibm.py Intel.py Infosys.py Jpmorgan.py LT.py Mahindra.py Mckinsey.py Microsoft.py Mphasis.py MorganStanley.py Nestle.py Nvidia.py Oracle.py Paypal.py Pepsico.py Pfizer.py Phillips.py PWC.py Qualcomm.py Razorpay.py SAPlabs.py Samsung.py Siemens.py Stripe.py Synopsis.py TechM.py TCS.py Uber.py Visa.py Walmart.py Zoho.py
 
+for %%S in (%SCRAPERS%) do (
+    echo.
+    echo ============================================
+    echo Running %%S
+    echo ============================================
+
+    python %%S
+
+    if errorlevel 1 (
+        echo ❌ %%S failed
+    ) else (
+        echo ✅ %%S completed
+    )
+
+    timeout /t 5 /nobreak >nul
+)
+
+echo.
+echo ============================================
+echo All Python Scrapers Finished!
+echo ============================================
+
+echo.
+echo Now running Node portal scraper...
+node scraper.js
+
+if errorlevel 1 (
+    echo ❌ scraper.js failed
+) else (
+    echo ✅ scraper.js completed
+)
+
+echo.
 echo ============================================
 echo All Scrapers Finished!
 echo ============================================
