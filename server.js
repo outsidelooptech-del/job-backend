@@ -52,7 +52,35 @@ const JOB_FIELDS = `
 `;
 
 // ======================================
-// HELPERS
+// SAFE INTERNSHIP FIELDS
+// ======================================
+
+const INTERNSHIP_FIELDS = `
+  id,
+  title,
+  company,
+  location,
+  work_mode,
+  internship_type,
+  company_description,
+  internship_description,
+  skills,
+  apply_link,
+  source,
+  company_logo,
+  stipend,
+  eligibility,
+  batch,
+  department,
+  category,
+  posted_at,
+  created_at,
+  updated_at,
+  is_active
+`;
+
+// ======================================
+// JOB FILTERS
 // ======================================
 
 function buildFilters(req) {
@@ -74,7 +102,6 @@ function buildFilters(req) {
         OR LOWER(COALESCE(category, '')) LIKE LOWER($${index})
       )
     `;
-
     values.push(`%${req.query.keyword}%`);
     index++;
   }
@@ -115,11 +142,80 @@ function buildFilters(req) {
     index++;
   }
 
-  return {
-    query,
-    values,
-    index
-  };
+  return { query, values, index };
+}
+
+// ======================================
+// INTERNSHIP FILTERS
+// ======================================
+
+function buildInternshipFilters(req) {
+  let query = `
+    FROM internships
+    WHERE is_active = true
+  `;
+
+  const values = [];
+  let index = 1;
+
+  if (req.query.keyword) {
+    query += `
+      AND (
+        LOWER(title) LIKE LOWER($${index})
+        OR LOWER(company) LIKE LOWER($${index})
+        OR LOWER(COALESCE(skills, '')) LIKE LOWER($${index})
+        OR LOWER(location) LIKE LOWER($${index})
+        OR LOWER(COALESCE(category, '')) LIKE LOWER($${index})
+        OR LOWER(COALESCE(internship_type, '')) LIKE LOWER($${index})
+      )
+    `;
+    values.push(`%${req.query.keyword}%`);
+    index++;
+  }
+
+  if (req.query.company) {
+    query += ` AND LOWER(company) LIKE LOWER($${index}) `;
+    values.push(`%${req.query.company}%`);
+    index++;
+  }
+
+  if (req.query.category) {
+    query += ` AND LOWER(category) = LOWER($${index}) `;
+    values.push(req.query.category.toLowerCase());
+    index++;
+  }
+
+  if (req.query.location) {
+    query += ` AND LOWER(location) LIKE LOWER($${index}) `;
+    values.push(`%${req.query.location}%`);
+    index++;
+  }
+
+  if (req.query.work_mode) {
+    query += ` AND LOWER(work_mode) = LOWER($${index}) `;
+    values.push(req.query.work_mode.toLowerCase());
+    index++;
+  }
+
+  if (req.query.internship_type) {
+    query += ` AND LOWER(internship_type) LIKE LOWER($${index}) `;
+    values.push(`%${req.query.internship_type}%`);
+    index++;
+  }
+
+  if (req.query.batch) {
+    query += ` AND LOWER(batch) LIKE LOWER($${index}) `;
+    values.push(`%${req.query.batch}%`);
+    index++;
+  }
+
+  if (req.query.eligibility) {
+    query += ` AND LOWER(eligibility) LIKE LOWER($${index}) `;
+    values.push(`%${req.query.eligibility}%`);
+    index++;
+  }
+
+  return { query, values, index };
 }
 
 // ======================================
@@ -134,17 +230,14 @@ app.get("/api/jobs", async (req, res) => {
 
     const built = buildFilters(req);
 
-    const countQuery = `
-      SELECT COUNT(*) as total
-      ${built.query}
-    `;
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total ${built.query}`,
+      built.values
+    );
 
-    const countResult = await pool.query(countQuery, built.values);
     const total = parseInt(countResult.rows[0].total);
 
-    let orderBy = `
-      ORDER BY source_priority DESC, created_at DESC
-    `;
+    let orderBy = ` ORDER BY source_priority DESC, created_at DESC `;
 
     if (req.query.sort === "latest") {
       orderBy = ` ORDER BY created_at DESC `;
@@ -154,19 +247,16 @@ app.get("/api/jobs", async (req, res) => {
       orderBy = ` ORDER BY views DESC `;
     }
 
-    const jobsQuery = `
+    const result = await pool.query(
+      `
       SELECT ${JOB_FIELDS}
       ${built.query}
       ${orderBy}
       LIMIT $${built.index}
       OFFSET $${built.index + 1}
-    `;
-
-    const result = await pool.query(jobsQuery, [
-      ...built.values,
-      limit,
-      offset
-    ]);
+      `,
+      [...built.values, limit, offset]
+    );
 
     res.json({
       success: true,
@@ -180,12 +270,7 @@ app.get("/api/jobs", async (req, res) => {
       }
     });
   } catch (err) {
-    console.log(err);
-
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -203,15 +288,9 @@ app.get("/api/jobs/latest", async (req, res) => {
       LIMIT 20
     `);
 
-    res.json({
-      success: true,
-      jobs: result.rows
-    });
+    res.json({ success: true, jobs: result.rows });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -237,15 +316,9 @@ app.get("/api/jobs/id/:id", async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      job: result.rows[0]
-    });
+    res.json({ success: true, job: result.rows[0] });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -266,15 +339,9 @@ app.get("/api/company/:slug", async (req, res) => {
       [req.params.slug]
     );
 
-    res.json({
-      success: true,
-      jobs: result.rows
-    });
+    res.json({ success: true, jobs: result.rows });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -295,15 +362,9 @@ app.get("/api/category/:category", async (req, res) => {
       [req.params.category]
     );
 
-    res.json({
-      success: true,
-      jobs: result.rows
-    });
+    res.json({ success: true, jobs: result.rows });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -313,13 +374,7 @@ app.get("/api/category/:category", async (req, res) => {
 
 app.post("/api/jobs/match", async (req, res) => {
   try {
-    const {
-      qualification,
-      batch,
-      role,
-      skills,
-      location
-    } = req.body;
+    const { qualification, batch, role, skills, location } = req.body;
 
     const skillText = Array.isArray(skills)
       ? skills.join(" ")
@@ -380,10 +435,7 @@ app.post("/api/jobs/match", async (req, res) => {
         OR LOWER(COALESCE(job_description, '')) LIKE LOWER($2)
         OR ($3 <> '' AND LOWER(location) LIKE LOWER($3))
       )
-      ORDER BY
-        match_score DESC,
-        source_priority DESC,
-        created_at DESC
+      ORDER BY match_score DESC, source_priority DESC, created_at DESC
       LIMIT 50
       `,
       [
@@ -397,27 +449,16 @@ app.post("/api/jobs/match", async (req, res) => {
 
     res.json({
       success: true,
-      profile: {
-        qualification,
-        batch,
-        role,
-        skills,
-        location
-      },
+      profile: { qualification, batch, role, skills, location },
       jobs: result.rows
     });
   } catch (err) {
-    console.log("Match API error:", err);
-
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ======================================
-// INCREMENT VIEWS
+// INCREMENT JOB VIEWS
 // ======================================
 
 app.post("/api/jobs/:id/view", async (req, res) => {
@@ -431,14 +472,208 @@ app.post("/api/jobs/:id/view", async (req, res) => {
       [req.params.id]
     );
 
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ======================================
+// GET INTERNSHIPS
+// ======================================
+
+app.get("/api/internships", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const built = buildInternshipFilters(req);
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total ${built.query}`,
+      built.values
+    );
+
+    const total = parseInt(countResult.rows[0].total);
+
+    let orderBy = ` ORDER BY created_at DESC `;
+
+    if (req.query.sort === "company") {
+      orderBy = ` ORDER BY company ASC `;
+    }
+
+    const result = await pool.query(
+      `
+      SELECT ${INTERNSHIP_FIELDS}
+      ${built.query}
+      ${orderBy}
+      LIMIT $${built.index}
+      OFFSET $${built.index + 1}
+      `,
+      [...built.values, limit, offset]
+    );
+
     res.json({
-      success: true
+      success: true,
+      internships: result.rows,
+      jobs: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+        has_next: page * limit < total
+      }
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ======================================
+// GET LATEST INTERNSHIPS
+// ======================================
+
+app.get("/api/internships/latest", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT ${INTERNSHIP_FIELDS}
+      FROM internships
+      WHERE is_active = true
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      success: true,
+      internships: result.rows,
+      jobs: result.rows
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ======================================
+// GET SINGLE INTERNSHIP
+// ======================================
+
+app.get("/api/internships/id/:id", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT ${INTERNSHIP_FIELDS}
+      FROM internships
+      WHERE id = $1
+      `,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Internship not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      internship: result.rows[0],
+      job: result.rows[0]
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ======================================
+// AI INTERNSHIP MATCH API
+// ======================================
+
+app.post("/api/internships/match", async (req, res) => {
+  try {
+    const { qualification, batch, role, skills, location } = req.body;
+
+    const skillText = Array.isArray(skills)
+      ? skills.join(" ")
+      : (skills || "");
+
+    const searchText = `${role || ""} ${skillText || ""}`.trim();
+
+    const locationFilter =
+      location && location !== "Any Location"
+        ? `%${location}%`
+        : "";
+
+    const result = await pool.query(
+      `
+      SELECT
+        ${INTERNSHIP_FIELDS},
+        (
+          CASE
+            WHEN LOWER(title) LIKE LOWER($1) THEN 35
+            WHEN LOWER(COALESCE(category, '')) LIKE LOWER($1) THEN 25
+            ELSE 0
+          END
+          +
+          CASE
+            WHEN LOWER(COALESCE(skills, '')) LIKE LOWER($2) THEN 30
+            WHEN LOWER(COALESCE(internship_description, '')) LIKE LOWER($2) THEN 20
+            ELSE 0
+          END
+          +
+          CASE
+            WHEN $3 = '' THEN 0
+            WHEN LOWER(location) LIKE LOWER($3) THEN 15
+            WHEN LOWER(work_mode) = 'remote'
+              AND LOWER($3) LIKE '%remote%' THEN 15
+            ELSE 0
+          END
+          +
+          CASE
+            WHEN $4 = '' THEN 0
+            WHEN LOWER(COALESCE(eligibility, '')) LIKE LOWER($4) THEN 10
+            WHEN LOWER(COALESCE(eligibility, '')) = 'not specified' THEN 5
+            ELSE 0
+          END
+          +
+          CASE
+            WHEN $5 = '' THEN 0
+            WHEN LOWER(COALESCE(batch, '')) LIKE LOWER($5) THEN 10
+            WHEN LOWER(COALESCE(batch, '')) = 'not specified' THEN 4
+            ELSE 0
+          END
+        ) AS match_score
+      FROM internships
+      WHERE is_active = true
+      AND (
+        LOWER(title) LIKE LOWER($1)
+        OR LOWER(COALESCE(category, '')) LIKE LOWER($1)
+        OR LOWER(COALESCE(skills, '')) LIKE LOWER($2)
+        OR LOWER(COALESCE(internship_description, '')) LIKE LOWER($2)
+        OR ($3 <> '' AND LOWER(location) LIKE LOWER($3))
+      )
+      ORDER BY match_score DESC, created_at DESC
+      LIMIT 50
+      `,
+      [
+        `%${role || ""}%`,
+        `%${skillText || searchText}%`,
+        locationFilter,
+        qualification ? `%${qualification}%` : "",
+        batch ? `%${batch}%` : ""
+      ]
+    );
+
+    res.json({
+      success: true,
+      profile: { qualification, batch, role, skills, location },
+      internships: result.rows,
+      jobs: result.rows
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -447,7 +682,7 @@ app.post("/api/jobs/:id/view", async (req, res) => {
 // ======================================
 
 app.get("/", (req, res) => {
-  res.send("🚀 Off Camp Job API Running");
+  res.send("🚀 Off Camp Job + Internship API Running");
 });
 
 // ======================================
