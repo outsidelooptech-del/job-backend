@@ -1,11 +1,10 @@
 require("dotenv").config();
 
+const fs = require("fs");
 const fetch = require("node-fetch");
 const { Pool } = require("pg");
 
-// ======================
-// POSTGRES CONNECTION
-// ======================
+const SOURCE_FILE = "job_sources.json";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -14,164 +13,9 @@ const pool = new Pool({
 
 const LOGO_DEV_TOKEN = process.env.LOGO_DEV_TOKEN;
 
-// ======================
-// LEVER COMPANIES
-// ======================
-
-const leverCompanies = [
-  "spotify",
-  "scaleai",
-  "asana",
-  "databricks",
-  "duolingo",
-  "reddit",
-  "twitch",
-  "zapier",
-  "clearbit",
-  "udemy",
-  "paytm",
-  "meesho",
-  "jiostar",
-  "mindtickle",
-  "lenskart",
-  "cred",
-  "highlevel",
-  "titans",
-  "dnb",
-  "viacom18",
-  "inmobi",
-  "hackerrank",
-  "aftershoot",
-  "wingassistant",
-  "tripleseat",
-  "remote",
-  "engine",
-  "wppmedia"
-];
-
-// ======================
-// GREENHOUSE COMPANIES
-// ======================
-
-const greenhouseCompanies = [
-  "airbnb",
-  "stripe",
-  "robinhood",
-  "discord",
-  "mongodb",
-  "hubspot",
-  "grammarly",
-  "canva",
-  "brex",
-  "affirm",
-  "ey",
-  "agoda",
-  "capco",
-  "zscaler",
-  "nice",
-  "speechify",
-  "bcg",
-  "okta",
-  "wpp",
-  "gitlab",
-  "roku",
-  "turing",
-  "smartsheet",
-  "five9",
-  "databricks",
-  "altruist",
-  "purestorage",
-  "inovalon",
-  "payoneer",
-  "fivetran",
-  "kaseya",
-  "phonepe",
-  "tide",
-  "sonicwall",
-  "razorpay",
-  "myntra",
-  "highradius",
-  "appian",
-  "zoominfo",
-  "ghx",
-  "cloudflare",
-  "toast",
-  "vonage",
-  "anaplan"
-];
-
-// ======================
-// COMPANY NAMES
-// ======================
-
-const companyNames = {
-  scaleai: "Scale AI",
-  jiostar: "JioStar",
-  mindtickle: "Mindtickle",
-  highlevel: "HighLevel",
-  dnb: "Dun & Bradstreet",
-  viacom18: "Viacom18",
-  inmobi: "InMobi",
-  hackerrank: "HackerRank",
-  aftershoot: "Aftershoot",
-  wingassistant: "Wing Assistant",
-  wppmedia: "WPP Media",
-  ey: "EY",
-  bcg: "BCG",
-  okta: "Okta",
-  wpp: "WPP",
-  gitlab: "GitLab",
-  phonepe: "PhonePe",
-  highradius: "HighRadius",
-  ghx: "GHX"
-};
-
-// ======================
-// COMPANY DOMAINS
-// ======================
-
-const companyDomains = {
-  spotify: "spotify.com",
-  scaleai: "scale.com",
-  asana: "asana.com",
-  databricks: "databricks.com",
-  duolingo: "duolingo.com",
-  reddit: "reddit.com",
-  twitch: "twitch.tv",
-  zapier: "zapier.com",
-  clearbit: "clearbit.com",
-  udemy: "udemy.com",
-  paytm: "paytm.com",
-  meesho: "meesho.com",
-  lenskart: "lenskart.com",
-  cred: "cred.club",
-  inmobi: "inmobi.com",
-  hackerrank: "hackerrank.com",
-  airbnb: "airbnb.com",
-  stripe: "stripe.com",
-  robinhood: "robinhood.com",
-  discord: "discord.com",
-  mongodb: "mongodb.com",
-  hubspot: "hubspot.com",
-  grammarly: "grammarly.com",
-  canva: "canva.com",
-  brex: "brex.com",
-  affirm: "affirm.com",
-  ey: "ey.com",
-  agoda: "agoda.com",
-  capco: "capco.com",
-  zscaler: "zscaler.com",
-  okta: "okta.com",
-  gitlab: "gitlab.com",
-  phonepe: "phonepe.com",
-  razorpay: "razorpay.com",
-  myntra: "myntra.com",
-  cloudflare: "cloudflare.com"
-};
-
-// ======================
-// MAIN SCRAPER
-// ======================
+function loadJobSources() {
+  return JSON.parse(fs.readFileSync(SOURCE_FILE, "utf8"));
+}
 
 async function runScraper() {
   try {
@@ -179,12 +23,42 @@ async function runScraper() {
 
     await markOldJobsInactive();
 
-    for (const company of leverCompanies) {
-      await scrapeLeverCompany(company);
-    }
+    const sources = loadJobSources();
 
-    for (const company of greenhouseCompanies) {
-      await scrapeGreenhouseCompany(company);
+    for (const source of sources) {
+      if (source.enabled === false) continue;
+
+      const ats = String(source.ats || "").toLowerCase();
+
+      if (ats === "lever") {
+        await scrapeLeverCompany(source);
+
+      } else if (ats === "greenhouse") {
+        await scrapeGreenhouseCompany(source);
+
+      } else if (ats === "smartrecruiters") {
+        await scrapeSmartRecruitersCompany(source);
+
+      } else if (ats === "workday") {
+        await scrapeWorkdayCompany(source);
+
+      } else if (ats === "ashby") {
+        await scrapeAshbyCompany(source);
+
+      } else if (ats === "workable") {
+        await scrapeWorkableCompany(source);
+
+      } else if (ats === "icims") {
+        await scrapeICIMSCompany(source);
+
+      } else if (ats === "successfactors") {
+        await scrapeSuccessFactorsCompany(source);
+
+      } else {
+        console.log("❌ Unsupported ATS:", source.ats, source.company);
+      }
+
+      await sleep(700);
     }
 
     console.log("\n🎉 SCRAPING FINISHED");
@@ -199,16 +73,19 @@ async function runScraper() {
 // LEVER SCRAPER
 // ======================
 
-async function scrapeLeverCompany(company) {
+async function scrapeLeverCompany(source) {
   try {
-    console.log(`🔵 Lever: ${company}`);
+    const board = source.board;
+    const companyName = source.company;
+
+    console.log(`🔵 Lever: ${companyName}`);
 
     const res = await fetchWithRetry(
-      `https://api.lever.co/v0/postings/${company}?mode=json`
+      `https://api.lever.co/v0/postings/${board}?mode=json`
     );
 
     if (!res || !res.ok) {
-      console.log(`❌ Failed: ${company}`);
+      console.log(`❌ Failed: ${companyName}`);
       return;
     }
 
@@ -216,7 +93,6 @@ async function scrapeLeverCompany(company) {
 
     for (const job of jobs) {
       const jobDescription = buildLeverDescription(job);
-      const companyName = getCompanyName(company);
 
       await saveJob({
         title: job.text || "Untitled Role",
@@ -240,7 +116,7 @@ async function scrapeLeverCompany(company) {
           normalizeApplyLink(job.applyUrl),
 
         source: "Lever",
-        company_logo: getCompanyLogo(company),
+        company_logo: getCompanyLogo(source),
 
         salary: extractLeverSalary(job),
         experience:
@@ -254,16 +130,13 @@ async function scrapeLeverCompany(company) {
           cleanText(job.categories?.department) ||
           "Not specified",
 
-        posted_at:
-          job.createdAt
-            ? new Date(job.createdAt).toISOString()
-            : null
+        posted_at: job.createdAt ? new Date(job.createdAt).toISOString() : null
       });
     }
 
-    console.log(`✅ ${jobs.length} jobs from ${company}\n`);
+    console.log(`✅ ${jobs.length} jobs from ${companyName}\n`);
   } catch (err) {
-    console.log(`❌ Lever error (${company}):`, err.message);
+    console.log(`❌ Lever error (${source.company}):`, err.message);
   }
 }
 
@@ -271,16 +144,21 @@ async function scrapeLeverCompany(company) {
 // GREENHOUSE SCRAPER
 // ======================
 
-async function scrapeGreenhouseCompany(company) {
+async function scrapeGreenhouseCompany(source) {
   try {
-    console.log(`🟢 Greenhouse: ${company}`);
+    const board = source.board;
+    const companyName = source.company;
 
-    const res = await fetchWithRetry(
-      `https://boards-api.greenhouse.io/v1/boards/${company}/jobs?content=true`
-    );
+    console.log(`🟢 Greenhouse: ${companyName}`);
+
+    const url =
+      source.url ||
+      `https://boards-api.greenhouse.io/v1/boards/${board}/jobs?content=true`;
+
+    const res = await fetchWithRetry(url);
 
     if (!res || !res.ok) {
-      console.log(`❌ Failed: ${company}`);
+      console.log(`❌ Failed: ${companyName}`);
       return;
     }
 
@@ -289,7 +167,6 @@ async function scrapeGreenhouseCompany(company) {
 
     for (const job of jobs) {
       const jobDescription = stripHtml(job.content || "");
-      const companyName = getCompanyName(company);
 
       let workMode = null;
 
@@ -321,7 +198,7 @@ async function scrapeGreenhouseCompany(company) {
         apply_link: normalizeApplyLink(job.absolute_url),
 
         source: "Greenhouse",
-        company_logo: getCompanyLogo(company),
+        company_logo: getCompanyLogo(source),
 
         salary: extractSalary(jobDescription),
         experience: detectExperience(`${job.title || ""} ${jobDescription || ""}`),
@@ -335,9 +212,423 @@ async function scrapeGreenhouseCompany(company) {
       });
     }
 
-    console.log(`✅ ${jobs.length} jobs from ${company}\n`);
+    console.log(`✅ ${jobs.length} jobs from ${companyName}\n`);
   } catch (err) {
-    console.log(`❌ Greenhouse error (${company}):`, err.message);
+    console.log(`❌ Greenhouse error (${source.company}):`, err.message);
+  }
+}
+
+// ======================
+// SMARTRECRUITERS SCRAPER
+// ======================
+
+async function scrapeSmartRecruitersCompany(source) {
+  try {
+    const board = source.board;
+    const companyName = source.company;
+
+    console.log(`🟠 SmartRecruiters: ${companyName}`);
+
+    const url =
+      source.url ||
+      `https://api.smartrecruiters.com/v1/companies/${board}/postings`;
+
+    const res = await fetchWithRetry(url);
+
+    if (!res || !res.ok) {
+      console.log(`❌ Failed: ${companyName}`);
+      return;
+    }
+
+    const data = await res.json();
+    const jobs = data.content || [];
+
+    for (const job of jobs) {
+      const title = job.name || "Untitled Role";
+
+      const location =
+        job.location?.city ||
+        job.location?.region ||
+        job.location?.country ||
+        "Remote";
+
+      await saveJob({
+        title,
+        company: companyName,
+        location,
+        work_mode: detectWorkMode(location),
+        job_type: detectJobType(title),
+        company_description: getCompanyDescription(companyName),
+        job_description: "",
+        skills: null,
+        apply_link: normalizeApplyLink(job.ref || job.applyUrl),
+        source: "SmartRecruiters",
+        company_logo: getCompanyLogo(source),
+        salary: "Not disclosed",
+        experience: detectExperience(title),
+        education: "Not specified",
+        department: job.department?.label || "Not specified",
+        posted_at: job.releasedDate || null
+      });
+    }
+
+    console.log(`✅ ${jobs.length} jobs from ${companyName}\n`);
+  } catch (err) {
+    console.log(`❌ SmartRecruiters error (${source.company}):`, err.message);
+  }
+}
+
+// ======================
+// WORKDAY SCRAPER
+// ======================
+
+async function scrapeWorkdayCompany(source) {
+  try {
+    const companyName = source.company;
+    const baseUrl = source.url;
+
+    if (!baseUrl) {
+      console.log(`❌ Workday URL missing: ${companyName}`);
+      return;
+    }
+
+    console.log(`🟤 Workday: ${companyName}`);
+
+    const apiUrl = `${baseUrl.replace(/\/$/, "")}/jobs`;
+
+    const res = await fetchWithRetry(apiUrl, {
+      method: "POST",
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        appliedFacets: {},
+        limit: 100,
+        offset: 0,
+        searchText: ""
+      })
+    });
+
+    if (!res || !res.ok) {
+      console.log(`❌ Failed: ${companyName}`);
+      return;
+    }
+
+    let data;
+
+    try {
+      data = await res.json();
+    } catch {
+      console.log(`❌ Non JSON Workday response: ${companyName}`);
+      return;
+    }
+
+    const jobs = data.jobPostings || [];
+
+    for (const job of jobs) {
+      const title = job.title || "Untitled Role";
+      const location = job.locationsText || "Remote";
+
+      const applyLink = job.externalPath
+        ? `${baseUrl.replace(/\/$/, "")}${job.externalPath}`
+        : baseUrl;
+
+      await saveJob({
+        title,
+        company: companyName,
+        location,
+        work_mode: detectWorkMode(location),
+        job_type: detectJobType(title),
+        company_description: getCompanyDescription(companyName),
+        job_description: "",
+        skills: null,
+        apply_link: normalizeApplyLink(applyLink),
+        source: "Workday",
+        company_logo: getCompanyLogo(source),
+        salary: "Not disclosed",
+        experience: detectExperience(title),
+        education: "Not specified",
+        department: "Not specified",
+        posted_at: job.postedOn || null
+      });
+    }
+
+    console.log(`✅ ${jobs.length} jobs from ${companyName}\n`);
+  } catch (err) {
+    console.log(`❌ Workday error (${source.company}):`, err.message);
+  }
+}
+// ======================
+// ASHBY SCRAPER
+// ======================
+
+async function scrapeAshbyCompany(source) {
+  try {
+    const company = source.company;
+    const board = source.board;
+
+    console.log(`🟣 Ashby: ${company}`);
+
+    const url = `https://jobs.ashbyhq.com/${board}`;
+
+    const res = await fetchWithRetry(url);
+
+    if (!res || !res.ok) {
+      console.log(`❌ Failed: ${company}`);
+      return;
+    }
+
+    const html = await res.text();
+
+    const matches = [...html.matchAll(/href="([^"]+)"/g)];
+
+    let count = 0;
+
+    for (const m of matches) {
+      const href = m[1];
+
+      if (!href.includes("/job/")) continue;
+
+      const applyLink = href.startsWith("http")
+        ? href
+        : `https://jobs.ashbyhq.com${href}`;
+
+      const title =
+        href.split("/").pop()?.replace(/-/g, " ") ||
+        "Job Opening";
+
+      await saveJob({
+        title,
+        company,
+        location: "Global",
+        work_mode: "Remote",
+        job_type: detectJobType(title),
+        company_description: getCompanyDescription(company),
+        job_description: "",
+        skills: null,
+        apply_link: applyLink,
+        source: "Ashby",
+        company_logo: getCompanyLogo(source),
+        salary: "Not disclosed",
+        experience: detectExperience(title),
+        education: "Not specified",
+        department: "Not specified",
+        posted_at: null
+      });
+
+      count++;
+    }
+
+    console.log(`✅ ${count} jobs from ${company}\n`);
+
+  } catch (err) {
+    console.log(`❌ Ashby error (${source.company}):`, err.message);
+  }
+}
+
+// ======================
+// WORKABLE SCRAPER
+// ======================
+
+async function scrapeWorkableCompany(source) {
+  try {
+    const company = source.company;
+    const board = source.board;
+
+    console.log(`🟡 Workable: ${company}`);
+
+    const url =
+      `https://apply.workable.com/api/v3/accounts/${board}/jobs`;
+
+    const res = await fetchWithRetry(url);
+
+    if (!res || !res.ok) {
+      console.log(`❌ Failed: ${company}`);
+      return;
+    }
+
+    const data = await res.json();
+
+    const jobs = data.results || [];
+
+    for (const job of jobs) {
+
+      const title = job.title || "Untitled";
+
+      const location =
+        job.location?.location_str || "Remote";
+
+      const applyLink =
+        `https://apply.workable.com/${board}/j/${job.shortcode}`;
+
+      await saveJob({
+        title,
+        company,
+        location,
+        work_mode: detectWorkMode(location),
+        job_type: detectJobType(title),
+        company_description: getCompanyDescription(company),
+        job_description: "",
+        skills: null,
+        apply_link: applyLink,
+        source: "Workable",
+        company_logo: getCompanyLogo(source),
+        salary: "Not disclosed",
+        experience: detectExperience(title),
+        education: "Not specified",
+        department: "Not specified",
+        posted_at: job.published || null
+      });
+    }
+
+    console.log(`✅ ${jobs.length} jobs from ${company}\n`);
+
+  } catch (err) {
+    console.log(`❌ Workable error (${source.company}):`, err.message);
+  }
+}
+
+// ======================
+// ICIMS SCRAPER
+// ======================
+
+async function scrapeICIMSCompany(source) {
+  try {
+    const company = source.company;
+    const board = source.board;
+
+    console.log(`🔷 iCIMS: ${company}`);
+
+    const url =
+      source.url ||
+      `https://${board}.icims.com/jobs/search?ss=1`;
+
+    const res = await fetchWithRetry(url);
+
+    if (!res || !res.ok) {
+      console.log(`❌ Failed: ${company}`);
+      return;
+    }
+
+    const html = await res.text();
+
+    const matches = [
+      ...html.matchAll(/href="([^"]*\/jobs\/[^"]+)"/g)
+    ];
+
+    let count = 0;
+
+    for (const m of matches) {
+
+      let applyLink = m[1];
+
+      if (!applyLink.startsWith("http")) {
+        applyLink = `https://${board}.icims.com${applyLink}`;
+      }
+
+      const title =
+        applyLink.split("/").pop()?.replace(/-/g, " ") ||
+        "Job Opening";
+
+      await saveJob({
+        title,
+        company,
+        location: "Global",
+        work_mode: "Onsite",
+        job_type: detectJobType(title),
+        company_description: getCompanyDescription(company),
+        job_description: "",
+        skills: null,
+        apply_link: applyLink,
+        source: "iCIMS",
+        company_logo: getCompanyLogo(source),
+        salary: "Not disclosed",
+        experience: detectExperience(title),
+        education: "Not specified",
+        department: "Not specified",
+        posted_at: null
+      });
+
+      count++;
+    }
+
+    console.log(`✅ ${count} jobs from ${company}\n`);
+
+  } catch (err) {
+    console.log(`❌ iCIMS error (${source.company}):`, err.message);
+  }
+}
+
+// ======================
+// SUCCESSFACTORS SCRAPER
+// ======================
+
+async function scrapeSuccessFactorsCompany(source) {
+  try {
+    const company = source.company;
+    const board = source.board;
+
+    console.log(`🟢 SuccessFactors: ${company}`);
+
+    const url =
+      source.url ||
+      `https://${board}.jobs2web.com/search/?q=&locationsearch=`;
+
+    const res = await fetchWithRetry(url);
+
+    if (!res || !res.ok) {
+      console.log(`❌ Failed: ${company}`);
+      return;
+    }
+
+    const html = await res.text();
+
+    const matches = [
+      ...html.matchAll(/href="([^"]*job\/[^"]+)"/g)
+    ];
+
+    let count = 0;
+
+    for (const m of matches) {
+
+      let applyLink = m[1];
+
+      if (!applyLink.startsWith("http")) {
+        applyLink = `https://${board}.jobs2web.com${applyLink}`;
+      }
+
+      const title =
+        applyLink.split("/").pop()?.replace(/-/g, " ") ||
+        "Job Opening";
+
+      await saveJob({
+        title,
+        company,
+        location: "Global",
+        work_mode: "Onsite",
+        job_type: detectJobType(title),
+        company_description: getCompanyDescription(company),
+        job_description: "",
+        skills: null,
+        apply_link: applyLink,
+        source: "SuccessFactors",
+        company_logo: getCompanyLogo(source),
+        salary: "Not disclosed",
+        experience: detectExperience(title),
+        education: "Not specified",
+        department: "Not specified",
+        posted_at: null
+      });
+
+      count++;
+    }
+
+    console.log(`✅ ${count} jobs from ${company}\n`);
+
+  } catch (err) {
+    console.log(`❌ SuccessFactors error (${source.company}):`, err.message);
   }
 }
 
@@ -347,6 +638,7 @@ async function scrapeGreenhouseCompany(company) {
 
 async function saveJob(job) {
   try {
+
     if (!job.apply_link || !job.title) {
       return;
     }
@@ -378,8 +670,10 @@ async function saveJob(job) {
         $1,$2,$3,$4,$5,$6,$7,$8,$9,
         $10,$11,$12,$13,$14,$15,$16,true
       )
+
       ON CONFLICT (apply_link)
       DO UPDATE SET
+
         title = EXCLUDED.title,
         company = EXCLUDED.company,
         location = EXCLUDED.location,
@@ -418,38 +712,58 @@ async function saveJob(job) {
     );
 
     console.log("✔", job.title);
+
   } catch (err) {
     console.log("❌ Insert error:", job.title, err.message);
   }
 }
 
 // ======================
-// MARK OLD PORTAL JOBS INACTIVE
+// MARK OLD JOBS INACTIVE
 // ======================
 
 async function markOldJobsInactive() {
   try {
+
     await pool.query(`
       UPDATE jobs
       SET is_active = false
-      WHERE source IN ('Lever', 'Greenhouse')
+      WHERE source IN
+      (
+        'Lever',
+        'Greenhouse',
+        'SmartRecruiters',
+        'Workday',
+        'Ashby',
+        'Workable',
+        'iCIMS',
+        'SuccessFactors'
+      )
     `);
 
-    console.log("♻️ Old Lever/Greenhouse jobs marked inactive\n");
+    console.log("♻️ Old ATS jobs marked inactive\n");
+
   } catch (err) {
     console.log("Inactive update error:", err.message);
   }
 }
 
 // ======================
-// FETCH RETRY
+// HELPERS
 // ======================
 
 async function fetchWithRetry(url, options = {}, retries = 3) {
+
   for (let attempt = 1; attempt <= retries; attempt++) {
+
     try {
+
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      const timeout = setTimeout(
+        () => controller.abort(),
+        30000
+      );
 
       const response = await fetch(url, {
         ...options,
@@ -459,8 +773,13 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
       clearTimeout(timeout);
 
       return response;
+
     } catch (err) {
-      console.log(`Fetch attempt ${attempt} failed:`, err.message);
+
+      console.log(
+        `Fetch attempt ${attempt} failed:`,
+        err.message
+      );
 
       if (attempt === retries) {
         return null;
@@ -473,11 +792,8 @@ async function fetchWithRetry(url, options = {}, retries = 3) {
   return null;
 }
 
-// ======================
-// HELPERS
-// ======================
-
 function buildLeverDescription(job) {
+
   let description = "";
 
   if (job.descriptionPlain) {
@@ -489,7 +805,9 @@ function buildLeverDescription(job) {
   }
 
   if (job.content?.lists) {
+
     for (const list of job.content.lists) {
+
       description += " " + stripHtml(list.text || "") + " ";
       description += " " + stripHtml(list.content || "") + " ";
     }
@@ -499,6 +817,7 @@ function buildLeverDescription(job) {
 }
 
 function stripHtml(html) {
+
   if (!html) return "";
 
   return String(html)
@@ -512,6 +831,7 @@ function stripHtml(html) {
 }
 
 function extractSkills(text) {
+
   if (!text) return null;
 
   const skills = [
@@ -520,7 +840,6 @@ function extractSkills(text) {
     "JavaScript",
     "TypeScript",
     "React",
-    "Node",
     "Node.js",
     "AWS",
     "Azure",
@@ -528,14 +847,12 @@ function extractSkills(text) {
     "Docker",
     "Kubernetes",
     "SQL",
-    "MySQL",
     "PostgreSQL",
     "MongoDB",
     "Android",
     "Kotlin",
     "Swift",
     "C++",
-    "C#",
     "Machine Learning",
     "AI",
     "TensorFlow",
@@ -546,9 +863,7 @@ function extractSkills(text) {
     "UI5",
     "Fiori",
     "DevOps",
-    "Linux",
-    "Data Science",
-    "Data Analytics"
+    "Linux"
   ];
 
   const lowerText = text.toLowerCase();
@@ -561,29 +876,40 @@ function extractSkills(text) {
 }
 
 function detectWorkMode(text) {
+
   if (!text) return "Onsite";
 
   text = String(text).toLowerCase();
 
   if (text.includes("remote")) return "Remote";
+
   if (text.includes("hybrid")) return "Hybrid";
 
   return "Onsite";
 }
 
 function detectJobType(text) {
+
   if (!text) return "Full Time";
 
   text = String(text).toLowerCase();
 
   if (text.includes("intern")) return "Internship";
+
   if (text.includes("contract")) return "Contract";
-  if (text.includes("part time") || text.includes("part-time")) return "Part Time";
+
+  if (
+    text.includes("part time") ||
+    text.includes("part-time")
+  ) {
+    return "Part Time";
+  }
 
   return "Full Time";
 }
 
 function detectExperience(text) {
+
   if (!text) return "Not specified";
 
   text = String(text).toLowerCase();
@@ -593,8 +919,7 @@ function detectExperience(text) {
   if (
     text.includes("fresher") ||
     text.includes("entry level") ||
-    text.includes("graduate") ||
-    text.includes("new grad")
+    text.includes("graduate")
   ) {
     return "Freshers";
   }
@@ -608,53 +933,44 @@ function detectExperience(text) {
 
   if (
     text.includes("senior") ||
-    text.includes("sr.")
+    text.includes("lead")
   ) {
     return "3+ yrs";
-  }
-
-  if (
-    text.includes("manager") ||
-    text.includes("lead") ||
-    text.includes("principal") ||
-    text.includes("architect") ||
-    text.includes("director") ||
-    text.includes("staff")
-  ) {
-    return "5+ yrs";
   }
 
   return "Not specified";
 }
 
 function detectEducation(text) {
+
   if (!text) return "Not specified";
 
   text = String(text).toLowerCase();
 
-  if (text.includes("b.tech") || text.includes("btech")) return "B.Tech";
-  if (text.includes("b.e") || text.includes("be degree")) return "B.E";
+  if (text.includes("b.tech")) return "B.Tech";
   if (text.includes("bachelor")) return "Bachelor's Degree";
   if (text.includes("master")) return "Master's Degree";
   if (text.includes("mba")) return "MBA";
-  if (text.includes("phd") || text.includes("ph.d")) return "PhD";
 
   return "Not specified";
 }
 
 function extractSalary(text) {
+
   if (!text) return "Not disclosed";
 
-  const salaryRegex =
+  const regex =
     /(?:₹|INR|\$|USD)\s?[\d,]+(?:\s?-\s?(?:₹|INR|\$|USD)?\s?[\d,]+)?/i;
 
-  const match = String(text).match(salaryRegex);
+  const match = String(text).match(regex);
 
   return match ? match[0] : "Not disclosed";
 }
 
 function extractLeverSalary(job) {
+
   if (job.salaryRange) {
+
     const min = job.salaryRange.min;
     const max = job.salaryRange.max;
     const currency = job.salaryRange.currency || "";
@@ -671,24 +987,30 @@ function extractLeverSalary(job) {
   return "Not disclosed";
 }
 
-function getCompanyName(company) {
-  return companyNames[company] || capitalize(company);
-}
+function getCompanyLogo(source) {
 
-function getCompanyLogo(company) {
   const domain =
-    companyDomains[company] ||
-    `${company.replace(/\s+/g, "").toLowerCase()}.com`;
+    source.domain ||
+    `${String(source.company)
+      .replace(/\s+/g, "")
+      .toLowerCase()}.com`;
+
+  if (!LOGO_DEV_TOKEN) {
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  }
 
   return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}`;
 }
 
 function getCompanyDescription(company) {
-  return `${company} is a leading company offering career opportunities across technology, product, operations, business, engineering, and support roles.`;
+  return `${company} is a leading company offering technology, engineering, product, analytics, operations, support, and business career opportunities.`;
 }
 
 function cleanText(value) {
-  if (value === undefined || value === null) return null;
+
+  if (value === undefined || value === null) {
+    return null;
+  }
 
   const text = String(value).trim();
 
@@ -696,6 +1018,7 @@ function cleanText(value) {
 }
 
 function truncateText(value, maxLength) {
+
   if (!value) return value;
 
   value = String(value);
@@ -706,6 +1029,7 @@ function truncateText(value, maxLength) {
 }
 
 function normalizeApplyLink(link) {
+
   if (!link) return null;
 
   link = String(link).trim();
@@ -717,24 +1041,12 @@ function normalizeApplyLink(link) {
   return link;
 }
 
-function capitalize(text) {
-  if (!text) return "";
-
-  return text
-    .replace(/-/g, " ")
-    .split(" ")
-    .map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    )
-    .join(" ");
-}
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ======================
-// RUN
+// START
 // ======================
 
 runScraper();

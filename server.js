@@ -259,16 +259,17 @@ app.get("/api/jobs", async (req, res) => {
     );
 
     res.json({
-      success: true,
-      jobs: result.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        total_pages: Math.ceil(total / limit),
-        has_next: page * limit < total
-      }
-    });
+  success: true,
+  total: total,
+  jobs: result.rows,
+  pagination: {
+    page,
+    limit,
+    total,
+    total_pages: Math.ceil(total / limit),
+    has_next: page * limit < total
+  }
+});
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -515,17 +516,19 @@ app.get("/api/internships", async (req, res) => {
     );
 
     res.json({
-      success: true,
-      internships: result.rows,
-      jobs: result.rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        total_pages: Math.ceil(total / limit),
-        has_next: page * limit < total
-      }
-    });
+  success: true,
+  total: total,
+  internships: result.rows,
+  jobs: result.rows,
+  pagination: {
+    page,
+    limit,
+    total,
+    total_pages: Math.ceil(total / limit),
+    has_next: page * limit < total
+  }
+});
+	
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -1,0 +1,34 @@
+[
+  { "company": "Cloudflare", "ats": "greenhouse", "board": "cloudflare", "domain": "cloudflare.com" },
+  { "company": "Stripe", "ats": "greenhouse", "board": "stripe", "domain": "stripe.com" },
+  { "company": "Airbnb", "ats": "greenhouse", "board": "airbnb", "domain": "airbnb.com" },
+  { "company": "Databricks", "ats": "greenhouse", "board": "databricks", "domain": "databricks.com" },
+  { "company": "Zscaler", "ats": "greenhouse", "board": "zscaler", "domain": "zscaler.com" },
+  { "company": "MongoDB", "ats": "greenhouse", "board": "mongodb", "domain": "mongodb.com" },
+  { "company": "Twilio", "ats": "greenhouse", "board": "twilio", "domain": "twilio.com" },
+  { "company": "Datadog", "ats": "greenhouse", "board": "datadog", "domain": "datadoghq.com" },
+  { "company": "Dropbox", "ats": "greenhouse", "board": "dropbox", "domain": "dropbox.com" },
+  { "company": "Asana", "ats": "greenhouse", "board": "asana", "domain": "asana.com" },
+  { "company": "Brex", "ats": "greenhouse", "board": "brex", "domain": "brex.com" },
+  { "company": "Elastic", "ats": "greenhouse", "board": "elastic", "domain": "elastic.co" },
+  { "company": "Rubrik", "ats": "greenhouse", "board": "rubrik", "domain": "rubrik.com" },
+  { "company": "Figma", "ats": "greenhouse", "board": "figma", "domain": "figma.com" },
+  { "company": "Postman", "ats": "greenhouse", "board": "postman", "domain": "postman.com" },
+
+  { "company": "Meesho", "ats": "lever", "board": "meesho", "domain": "meesho.com" },
+  { "company": "CRED", "ats": "lever", "board": "cred", "domain": "cred.club" },
+  { "company": "Zeta", "ats": "lever", "board": "zeta", "domain": "zeta.tech" },
+  { "company": "Paytm", "ats": "lever", "board": "paytm", "domain": "paytm.com" },
+  { "company": "Mindtickle", "ats": "lever", "board": "mindtickle", "domain": "mindtickle.com" },
+  { "company": "FamPay", "ats": "lever", "board": "fampay", "domain": "fampay.in" },
+
+  { "company": "Visa", "ats": "smartrecruiters", "board": "Visa", "domain": "visa.com" },
+  { "company": "Bosch", "ats": "smartrecruiters", "board": "BoschGroup", "domain": "bosch.com" },
+  { "company": "Wise", "ats": "smartrecruiters", "board": "Wise", "domain": "wise.com" },
+  { "company": "Delivery Hero", "ats": "smartrecruiters", "board": "DeliveryHero", "domain": "deliveryhero.com" },
+
+  { "company": "Adobe", "ats": "workday", "board": "external_experienced", "url": "https://adobe.wd5.myworkdayjobs.com/external_experienced", "domain": "adobe.com" },
+  { "company": "Salesforce", "ats": "workday", "board": "External_Career_Site", "url": "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site", "domain": "salesforce.com" },
+  { "company": "NVIDIA", "ats": "workday", "board": "NVIDIAExternalCareerSite", "url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite", "domain": "nvidia.com" },
+  { "company": "Dell", "ats": "workday", "board": "External", "url": "https://dell.wd1.myworkdayjobs.com/External", "domain": "dell.com" }
+]

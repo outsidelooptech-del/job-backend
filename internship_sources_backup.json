@@ -1,0 +1,217 @@
+[
+  {
+    "company": "PhonePe",
+    "ats": "greenhouse",
+    "board": "phonepe"
+  },
+  {
+    "company": "HighRadius",
+    "ats": "greenhouse",
+    "board": "highradius"
+  },
+  {
+    "company": "GitLab",
+    "ats": "greenhouse",
+    "board": "gitlab"
+  },
+  {
+    "company": "Cloudflare",
+    "ats": "greenhouse",
+    "board": "cloudflare"
+  },
+  {
+    "company": "HubSpot",
+    "ats": "greenhouse",
+    "board": "hubspot"
+  },
+  {
+    "company": "Stripe",
+    "ats": "greenhouse",
+    "board": "stripe"
+  },
+  {
+    "company": "Airbnb",
+    "ats": "greenhouse",
+    "board": "airbnb"
+  },
+  {
+    "company": "Discord",
+    "ats": "greenhouse",
+    "board": "discord"
+  },
+  {
+    "company": "Fivetran",
+    "ats": "greenhouse",
+    "board": "fivetran"
+  },
+  {
+    "company": "Databricks",
+    "ats": "greenhouse",
+    "board": "databricks"
+  },
+  {
+    "company": "Okta",
+    "ats": "greenhouse",
+    "board": "okta"
+  },
+  {
+    "company": "Zscaler",
+    "ats": "greenhouse",
+    "board": "zscaler"
+  },
+  {
+    "company": "Scale AI",
+    "ats": "greenhouse",
+    "board": "scaleai"
+  },
+  {
+    "company": "Reddit",
+    "ats": "greenhouse",
+    "board": "reddit"
+  },
+  {
+    "company": "Twitch",
+    "ats": "greenhouse",
+    "board": "twitch"
+  },
+  {
+    "company": "Duolingo",
+    "ats": "greenhouse",
+    "board": "duolingo"
+  },
+
+  {
+    "company": "Meesho",
+    "ats": "lever",
+    "board": "meesho"
+  },
+  {
+    "company": "CRED",
+    "ats": "lever",
+    "board": "cred"
+  },
+  {
+    "company": "BrowserStack",
+    "ats": "lever",
+    "board": "browserstack",
+	  , "enabled": false
+  },
+  {
+    "company": "Zepto",
+    "ats": "lever",
+    "board": "zepto",
+	  , "enabled": false
+  },
+  {
+    "company": "CoinSwitch",
+    "ats": "lever",
+    "board": "coinswitch",
+	  , "enabled": false
+  },
+  {
+    "company": "Unacademy",
+    "ats": "lever",
+    "board": "unacademy",
+	  , "enabled": false
+  },
+  {
+    "company": "ShareChat",
+    "ats": "lever",
+    "board": "sharechat",
+	  , "enabled": false
+  },
+
+  {
+    "company": "Perplexity",
+    "ats": "ashby",
+    "board": "perplexity"
+  },
+  {
+    "company": "ElevenLabs",
+    "ats": "ashby",
+    "board": "elevenlabs"
+  },
+  {
+    "company": "Anthropic",
+    "ats": "ashby",
+    "board": "anthropic"
+  },
+  {
+    "company": "Mercor",
+    "ats": "ashby",
+    "board": "mercor"
+  },
+  {
+    "company": "Linear",
+    "ats": "ashby",
+    "board": "linear"
+  },
+  {
+    "company": "Clay",
+    "ats": "ashby",
+    "board": "clay"
+  },
+  {
+    "company": "Vapi",
+    "ats": "ashby",
+    "board": "vapi"
+  },
+  {
+    "company": "Decagon",
+    "ats": "ashby",
+    "board": "decagon"
+  },
+  
+  
+  { "company": "Amazon", "ats": "workday", "board": "amazon"},
+  { "company": "Microsoft", "ats": "workday", "board": "microsoft" },
+  { "company": "Google", "ats": "workday", "board": "google" },
+  { "company": "NVIDIA", "ats": "workday", "board": "nvidia" },
+  { "company": "Salesforce", "ats": "workday", "board": "salesforce" },
+  { "company": "VMware", "ats": "workday", "board": "vmware" },
+  { "company": "Qualcomm", "ats": "workday", "board": "qualcomm" },
+  { "company": "ServiceNow", "ats": "workday", "board": "servicenow" },
+  { "company": "Intel", "ats": "workday", "board": "intel" },
+  { "company": "Cisco", "ats": "workday", "board": "cisco" },
+  { "company": "Dell", "ats": "workday", "board": "dell" },
+  { "company": "PayPal", "ats": "workday", "board": "paypal" },
+  { "company": "SAP", "ats": "workday", "board": "sap" },
+  { "company": "Samsung", "ats": "workday", "board": "samsung" },
+  { "company": "Nike", "ats": "workday", "board": "nike" },
+  
+    { "company": "Visa", "ats": "smartrecruiters", "board": "Visa" },
+  { "company": "Bosch", "ats": "smartrecruiters", "board": "BoschGroup" },
+  { "company": "Wolt", "ats": "smartrecruiters", "board": "Wolt" },
+  { "company": "Nagarro", "ats": "smartrecruiters", "board": "Nagarro" },
+  { "company": "Publicis Sapient", "ats": "smartrecruiters", "board": "PublicisGroupe" },
+  { "company": "Klarna", "ats": "smartrecruiters", "board": "Klarna" },
+  { "company": "Cognizant Softvision", "ats": "smartrecruiters", "board": "CognizantSoftvision" },
+  
+   { "company": "EY", "ats": "successfactors", "board": "ey" },
+  { "company": "Deloitte", "ats": "successfactors", "board": "deloitte" },
+  { "company": "Accenture", "ats": "successfactors", "board": "accenture" },
+  { "company": "KPMG", "ats": "successfactors", "board": "kpmg" },
+  { "company": "PWC", "ats": "successfactors", "board": "pwc" },
+  { "company": "Adidas", "ats": "successfactors", "board": "adidas" },
+  { "company": "Siemens", "ats": "successfactors", "board": "siemens" },
+  
+   { "company": "Oracle", "ats": "taleo", "board": "oracle" },
+  { "company": "Boeing", "ats": "taleo", "board": "boeing" },
+  { "company": "American Express", "ats": "taleo", "board": "amex" },
+  { "company": "Marriott", "ats": "taleo", "board": "marriott" },
+  { "company": "FedEx", "ats": "taleo", "board": "fedex" },
+  
+    { "company": "AMD", "ats": "icims", "board": "amd" },
+  { "company": "BlackRock", "ats": "icims", "board": "blackrock" },
+  { "company": "Capgemini", "ats": "icims", "board": "capgemini" },
+  { "company": "NTT Data", "ats": "icims", "board": "nttdata" },
+  { "company": "RTX", "ats": "icims", "board": "rtx" },
+  
+  { "company": "Hackerrank", "ats": "workable", "board": "hackerrank" ,  "enabled": false},
+  { "company": "LambdaTest", "ats": "workable", "board": "lambdatest" , "enabled": false},
+  { "company": "BrowserStack", "ats": "workable", "board": "browserstack" , "enabled": false },
+  { "company": "MoEngage", "ats": "workable", "board": "moengage" , "enabled": false },
+  { "company": "TestGorilla", "ats": "workable", "board": "testgorilla" ,  "enabled": false }
+]
+  
+

@@ -7,14 +7,10 @@ from database import get_connection
 from save_internship import save_internship
 
 
-# ===============================
-# CONFIG
-# ===============================
-
 SOURCE_FILE = "internship_sources.json"
 OUTPUT_FILE = "internships_output.json"
 
-MAX_INTERNSHIPS = 500
+MAX_INTERNSHIPS = 2000
 REQUEST_TIMEOUT = 30
 SLEEP_BETWEEN_COMPANIES = 1
 
@@ -29,81 +25,33 @@ HEADERS_HTML = {
 }
 
 
-# ===============================
-# INTERNSHIP DETECTOR
-# ===============================
-
 def is_internship(title, description="", keywords=None):
-    title_text = f" {title or ''} ".lower()
-    keyword_text = f" {' '.join(keywords or [])} ".lower()
+    text = f" {title or ''} {description or ''} {' '.join(keywords or [])} ".lower()
 
     reject_terms = [
-        " senior ",
-        " manager ",
-        " lead ",
-        " principal ",
-        " director ",
-        " architect ",
-        " staff engineer ",
-        " vice president ",
-        " vp ",
-        " head ",
-        " 5-7 ",
-        " 7-11 ",
-        " 10-15 ",
-        " 4-8yrs ",
-        " 4-8 years ",
-        " 5-7 years ",
-        " 7 to 11 years "
+        "senior", "manager", "lead", "principal", "director",
+        "architect", "staff engineer", "vice president", "vp",
+        "head", "sde ii", "sde 2", "experienced"
     ]
 
     for term in reject_terms:
-        if term in title_text:
+        if term in text:
             return False
 
-    title_strong_terms = [
-        " intern ",
-        " internship ",
-        " summer intern ",
-        " winter intern ",
-        " graduate intern ",
-        " software intern ",
-        " engineering intern ",
-        " data intern ",
-        " analyst intern ",
-        " marketing intern ",
-        " trainee ",
-        " apprentice ",
-        " co-op "
+    include_terms = [
+        "intern", "internship", "summer intern", "winter intern",
+        "graduate intern", "software intern", "engineering intern",
+        "data intern", "analyst intern", "marketing intern",
+        "trainee", "apprentice", "co-op", "student worker",
+        "campus", "new grad", "early career", "graduate program"
     ]
 
-    keyword_strong_terms = [
-        " intern ",
-        " internship ",
-        " trainee ",
-        " apprentice ",
-        " co-op "
-    ]
+    return any(term in text for term in include_terms)
 
-    for term in title_strong_terms:
-        if term in title_text:
-            return True
-
-    for term in keyword_strong_terms:
-        if term in keyword_text:
-            return True
-
-    return False
-
-
-# ===============================
-# HELPERS
-# ===============================
 
 def strip_html(html):
     if not html:
         return ""
-
     soup = BeautifulSoup(html, "html.parser")
     return soup.get_text(separator="\n").strip()
 
@@ -115,16 +63,12 @@ def load_sources():
 
 def clean_list(values):
     cleaned = []
-
     for value in values:
         if value is None:
             continue
-
         value = str(value).strip()
-
         if value and value not in cleaned:
             cleaned.append(value)
-
     return cleaned
 
 
@@ -135,10 +79,7 @@ def normalize_location(value):
     value = str(value).strip()
 
     if value.lower() in [
-        "remote - global",
-        "remote global",
-        "global remote",
-        "remote"
+        "remote - global", "remote global", "global remote", "remote"
     ]:
         return "Remote"
 
@@ -170,13 +111,27 @@ def is_duplicate_link(link, seen_links):
         return True
 
     seen_links.add(link)
-
     return False
 
 
-# ===============================
-# GREENHOUSE HELPERS
-# ===============================
+def is_india_job(location):
+    if not location:
+        return False
+
+    location = location.lower()
+
+    india_keywords = [
+        "india", "bangalore", "bengaluru", "hyderabad", "pune",
+        "mumbai", "gurgaon", "gurugram", "chennai", "noida",
+        "remote india", "delhi", "kolkata", "ahmedabad"
+    ]
+
+    return any(k in location for k in india_keywords)
+
+
+def make_job_key(company, title, location):
+    return f"{company}_{title}_{location}".lower().strip()
+
 
 def get_greenhouse_job_description(job):
     return strip_html(job.get("content", ""))
@@ -192,14 +147,8 @@ def extract_greenhouse_department(job):
 
 
 def extract_greenhouse_location(job):
-    return normalize_location(
-        job.get("location", {}).get("name")
-    )
+    return normalize_location(job.get("location", {}).get("name"))
 
-
-# ===============================
-# LEVER HELPERS
-# ===============================
 
 def get_lever_job_description(job):
     description = job.get("descriptionPlain") or ""
@@ -219,16 +168,10 @@ def get_lever_job_description(job):
 
 
 def extract_lever_location(categories):
-    return normalize_location(
-        categories.get("location") or "Remote"
-    )
+    return normalize_location(categories.get("location") or "Remote")
 
 
-# ===============================
-# GREENHOUSE SCRAPER
-# ===============================
-
-def scrape_greenhouse(source, cur):
+def scrape_greenhouse(source, cur, global_seen_jobs):
     company = source["company"]
     board = source["board"]
 
@@ -240,11 +183,7 @@ def scrape_greenhouse(source, cur):
     seen_links = set()
 
     try:
-        response = requests.get(
-            url,
-            headers=HEADERS_JSON,
-            timeout=REQUEST_TIMEOUT
-        )
+        response = requests.get(url, headers=HEADERS_JSON, timeout=REQUEST_TIMEOUT)
 
         if response.status_code == 404:
             print(f"⚠️ Board not found: {board}")
@@ -279,6 +218,11 @@ def scrape_greenhouse(source, cur):
             if is_duplicate_link(apply_link, seen_links):
                 continue
 
+            job_key = make_job_key(company, title, location)
+            if job_key in global_seen_jobs:
+                continue
+            global_seen_jobs.add(job_key)
+
             internship_data = {
                 "company": company,
                 "title": title,
@@ -289,17 +233,15 @@ def scrape_greenhouse(source, cur):
                 "department": department,
                 "internship_description": description,
                 "company_description": f"{company} internship and early career opportunities.",
-                "posted_at": job.get("updated_at")
+                "posted_at": job.get("updated_at"),
+                "priority": 2 if is_india_job(location) else 1
             }
 
             internships.append(internship_data)
-
             print("✅ Saving internship:", title)
-
             save_internship(internship_data, cur)
 
         print(f"🎯 {len(internships)} internships found from {company}")
-
         return internships
 
     except Exception as e:
@@ -307,11 +249,7 @@ def scrape_greenhouse(source, cur):
         return []
 
 
-# ===============================
-# LEVER SCRAPER
-# ===============================
-
-def scrape_lever(source, cur):
+def scrape_lever(source, cur, global_seen_jobs):
     company = source["company"]
     board = source["board"]
 
@@ -323,11 +261,7 @@ def scrape_lever(source, cur):
     seen_links = set()
 
     try:
-        response = requests.get(
-            url,
-            headers=HEADERS_JSON,
-            timeout=REQUEST_TIMEOUT
-        )
+        response = requests.get(url, headers=HEADERS_JSON, timeout=REQUEST_TIMEOUT)
 
         if response.status_code == 404:
             print(f"⚠️ Board not found: {board}")
@@ -369,6 +303,11 @@ def scrape_lever(source, cur):
             if is_duplicate_link(apply_link, seen_links):
                 continue
 
+            job_key = make_job_key(company, title, location)
+            if job_key in global_seen_jobs:
+                continue
+            global_seen_jobs.add(job_key)
+
             internship_data = {
                 "company": company,
                 "title": title,
@@ -379,17 +318,15 @@ def scrape_lever(source, cur):
                 "department": department,
                 "internship_description": description,
                 "company_description": f"{company} internship and early career opportunities.",
-                "posted_at": safe_posted_at_from_ms(job.get("createdAt"))
+                "posted_at": safe_posted_at_from_ms(job.get("createdAt")),
+                "priority": 2 if is_india_job(location) else 1
             }
 
             internships.append(internship_data)
-
             print("✅ Saving internship:", title)
-
             save_internship(internship_data, cur)
 
         print(f"🎯 {len(internships)} internships found from {company}")
-
         return internships
 
     except Exception as e:
@@ -397,11 +334,7 @@ def scrape_lever(source, cur):
         return []
 
 
-# ===============================
-# ASHBY SCRAPER
-# ===============================
-
-def scrape_ashby(source, cur):
+def scrape_ashby(source, cur, global_seen_jobs):
     company = source["company"]
     board = source["board"]
 
@@ -413,11 +346,7 @@ def scrape_ashby(source, cur):
     seen_links = set()
 
     try:
-        response = requests.get(
-            url,
-            headers=HEADERS_HTML,
-            timeout=REQUEST_TIMEOUT
-        )
+        response = requests.get(url, headers=HEADERS_HTML, timeout=REQUEST_TIMEOUT)
 
         if response.status_code == 404:
             print(f"⚠️ Ashby board not found: {board}")
@@ -428,7 +357,6 @@ def scrape_ashby(source, cur):
             return []
 
         soup = BeautifulSoup(response.text, "html.parser")
-
         links = soup.find_all("a", href=True)
 
         for link in links:
@@ -451,10 +379,17 @@ def scrape_ashby(source, cur):
             if is_duplicate_link(apply_link, seen_links):
                 continue
 
+            location = source.get("location") or "Global"
+
+            job_key = make_job_key(company, title, location)
+            if job_key in global_seen_jobs:
+                continue
+            global_seen_jobs.add(job_key)
+
             internship_data = {
                 "company": company,
                 "title": title,
-                "location": source.get("location") or "Global",
+                "location": location,
                 "apply_link": apply_link,
                 "keywords": clean_list([
                     "Ashby",
@@ -465,17 +400,15 @@ def scrape_ashby(source, cur):
                 "department": "Not specified",
                 "internship_description": "",
                 "company_description": f"{company} internship and early career opportunities.",
-                "posted_at": None
+                "posted_at": None,
+                "priority": 2 if is_india_job(location) else 1
             }
 
             internships.append(internship_data)
-
             print("✅ Saving internship:", title)
-
             save_internship(internship_data, cur)
 
         print(f"🎯 {len(internships)} internships found from {company}")
-
         return internships
 
     except Exception as e:
@@ -483,14 +416,270 @@ def scrape_ashby(source, cur):
         return []
 
 
-# ===============================
-# MAIN SCRAPER
-# ===============================
+def scrape_smartrecruiters(source, cur, global_seen_jobs):
+    company = source["company"]
+    board = source["board"]
+
+    url = source.get("url") or f"https://api.smartrecruiters.com/v1/companies/{board}/postings"
+
+    print(f"\n🟠 SmartRecruiters: {company}")
+
+    internships = []
+    seen_links = set()
+
+    try:
+        response = requests.get(url, headers=HEADERS_JSON, timeout=REQUEST_TIMEOUT)
+
+        if response.status_code == 404:
+            print(f"⚠️ SmartRecruiters board not found: {board}")
+            return []
+
+        if response.status_code != 200:
+            print("❌ Failed:", response.status_code)
+            return []
+
+        data = response.json()
+        jobs = data.get("content", [])
+
+        for job in jobs:
+            title = job.get("name", "") or ""
+
+            location_data = job.get("location") or {}
+            location = normalize_location(
+                location_data.get("city")
+                or location_data.get("region")
+                or location_data.get("country")
+                or "Global"
+            )
+
+            department_data = job.get("department")
+            department = (
+                department_data.get("label")
+                if isinstance(department_data, dict)
+                else "Not specified"
+            ) or "Not specified"
+
+            apply_link = job.get("ref") or job.get("applyUrl")
+
+            keywords = clean_list([
+                department,
+                location,
+                "SmartRecruiters"
+            ])
+
+            if not is_internship(title, "", keywords):
+                continue
+
+            if is_duplicate_link(apply_link, seen_links):
+                continue
+
+            job_key = make_job_key(company, title, location)
+            if job_key in global_seen_jobs:
+                continue
+            global_seen_jobs.add(job_key)
+
+            internship_data = {
+                "company": company,
+                "title": title,
+                "location": location,
+                "apply_link": apply_link,
+                "keywords": keywords,
+                "source": "SmartRecruiters",
+                "department": department,
+                "internship_description": "",
+                "company_description": f"{company} internship and early career opportunities.",
+                "posted_at": job.get("releasedDate"),
+                "priority": 2 if is_india_job(location) else 1
+            }
+
+            internships.append(internship_data)
+            print("✅ Saving internship:", title)
+            save_internship(internship_data, cur)
+
+        print(f"🎯 {len(internships)} internships found from {company}")
+        return internships
+
+    except Exception as e:
+        print("❌ SmartRecruiters error:", company, e)
+        return []
+
+
+def scrape_workable(source, cur, global_seen_jobs):
+    company = source["company"]
+    board = source["board"]
+
+    url = source.get("url") or f"https://apply.workable.com/api/v3/accounts/{board}/jobs"
+
+    print(f"\n🟡 Workable: {company}")
+
+    internships = []
+    seen_links = set()
+
+    try:
+        response = requests.get(url, headers=HEADERS_JSON, timeout=REQUEST_TIMEOUT)
+
+        if response.status_code == 404:
+            print(f"⚠️ Workable board not found: {board}")
+            return []
+
+        if response.status_code != 200:
+            print("❌ Failed:", response.status_code)
+            return []
+
+        data = response.json()
+        jobs = data.get("results", [])
+
+        for job in jobs:
+            title = job.get("title", "") or ""
+
+            location = normalize_location(
+                job.get("location", {}).get("location_str")
+                or "Remote"
+            )
+
+            apply_link = f"https://apply.workable.com/{board}/j/{job.get('shortcode')}"
+
+            keywords = clean_list([
+                location,
+                "Workable"
+            ])
+
+            if not is_internship(title, "", keywords):
+                continue
+
+            if is_duplicate_link(apply_link, seen_links):
+                continue
+
+            job_key = make_job_key(company, title, location)
+            if job_key in global_seen_jobs:
+                continue
+            global_seen_jobs.add(job_key)
+
+            internship_data = {
+                "company": company,
+                "title": title,
+                "location": location,
+                "apply_link": apply_link,
+                "keywords": keywords,
+                "source": "Workable",
+                "department": "Not specified",
+                "internship_description": "",
+                "company_description": f"{company} internship and early career opportunities.",
+                "posted_at": job.get("published"),
+                "priority": 2 if is_india_job(location) else 1
+            }
+
+            internships.append(internship_data)
+            print("✅ Saving internship:", title)
+            save_internship(internship_data, cur)
+
+        print(f"🎯 {len(internships)} internships found from {company}")
+        return internships
+
+    except Exception as e:
+        print("❌ Workable error:", company, e)
+        return []
+
+
+def scrape_workday(source, cur, global_seen_jobs):
+    company = source["company"]
+    base_url = source.get("url")
+
+    if not base_url:
+        print(f"❌ Workday URL missing: {company}")
+        return []
+
+    print(f"\n🟤 Workday: {company}")
+
+    internships = []
+    seen_links = set()
+
+    api_url = base_url.rstrip("/") + "/jobs"
+
+    payload = {
+        "appliedFacets": {},
+        "limit": 100,
+        "offset": 0,
+        "searchText": ""
+    }
+
+    try:
+        response = requests.post(
+            api_url,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            json=payload,
+            timeout=REQUEST_TIMEOUT
+        )
+
+        if response.status_code != 200:
+            print("❌ Failed:", response.status_code)
+            return []
+
+        try:
+            data = response.json()
+        except Exception:
+            print("❌ Workday non-JSON response")
+            return []
+
+        jobs = data.get("jobPostings", [])
+
+        for job in jobs:
+            title = job.get("title", "") or ""
+            location = normalize_location(job.get("locationsText") or "Global")
+
+            external_path = job.get("externalPath")
+            apply_link = base_url.rstrip("/") + external_path if external_path else base_url
+
+            keywords = clean_list([
+                location,
+                "Workday"
+            ])
+
+            if not is_internship(title, "", keywords):
+                continue
+
+            if is_duplicate_link(apply_link, seen_links):
+                continue
+
+            job_key = make_job_key(company, title, location)
+            if job_key in global_seen_jobs:
+                continue
+            global_seen_jobs.add(job_key)
+
+            internship_data = {
+                "company": company,
+                "title": title,
+                "location": location,
+                "apply_link": apply_link,
+                "keywords": keywords,
+                "source": "Workday",
+                "department": "Not specified",
+                "internship_description": "",
+                "company_description": f"{company} internship and early career opportunities.",
+                "posted_at": job.get("postedOn"),
+                "priority": 2 if is_india_job(location) else 1
+            }
+
+            internships.append(internship_data)
+            print("✅ Saving internship:", title)
+            save_internship(internship_data, cur)
+
+        print(f"🎯 {len(internships)} internships found from {company}")
+        return internships
+
+    except Exception as e:
+        print("❌ Workday error:", company, e)
+        return []
+
 
 def run_internship_scraper():
     sources = load_sources()
-
     all_internships = []
+    global_seen_jobs = set()
 
     conn = get_connection()
     cur = conn.cursor()
@@ -506,23 +695,31 @@ def run_internship_scraper():
                 print("⏭️ Skipping disabled source:", source.get("company"))
                 continue
 
-            ats = source.get("ats")
+            ats = str(source.get("ats", "")).lower().strip()
             results = []
 
             if ats == "greenhouse":
-                results = scrape_greenhouse(source, cur)
+                results = scrape_greenhouse(source, cur, global_seen_jobs)
 
             elif ats == "lever":
-                results = scrape_lever(source, cur)
+                results = scrape_lever(source, cur, global_seen_jobs)
 
             elif ats == "ashby":
-                results = scrape_ashby(source, cur)
+                results = scrape_ashby(source, cur, global_seen_jobs)
+
+            elif ats == "smartrecruiters":
+                results = scrape_smartrecruiters(source, cur, global_seen_jobs)
+
+            elif ats == "workable":
+                results = scrape_workable(source, cur, global_seen_jobs)
+
+            elif ats == "workday":
+                results = scrape_workday(source, cur, global_seen_jobs)
 
             else:
                 print("❌ Unsupported ATS:", ats, "|", source.get("company"))
 
             all_internships.extend(results)
-
             conn.commit()
 
             time.sleep(SLEEP_BETWEEN_COMPANIES)
@@ -537,26 +734,13 @@ def run_internship_scraper():
         cur.close()
         conn.close()
 
-    with open(
-        OUTPUT_FILE,
-        "w",
-        encoding="utf-8"
-    ) as f:
-        json.dump(
-            all_internships,
-            f,
-            indent=4,
-            ensure_ascii=False
-        )
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(all_internships, f, indent=4, ensure_ascii=False)
 
     print("📂 Output saved to:", OUTPUT_FILE)
 
     return all_internships
 
-
-# ===============================
-# RUN
-# ===============================
 
 if __name__ == "__main__":
     run_internship_scraper()
