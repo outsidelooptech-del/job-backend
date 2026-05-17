@@ -688,6 +688,247 @@ app.get("/", (req, res) => {
   res.send("🚀 Off Camp Job + Internship API Running");
 });
 
+
+// ======================================
+// JOB FILTER VALUES API
+// ======================================
+
+app.get("/api/jobs/filters", async (req, res) => {
+  try {
+    const [locations, companies] = await Promise.all([
+      pool.query(`
+        SELECT DISTINCT location
+        FROM jobs
+        WHERE location IS NOT NULL
+        AND location != ''
+        AND is_active = true
+        LIMIT 1000
+      `),
+
+      pool.query(`
+        SELECT DISTINCT company
+        FROM jobs
+        WHERE company IS NOT NULL
+        AND company != ''
+        AND is_active = true
+        ORDER BY company ASC
+        LIMIT 200
+      `)
+    ]);
+
+    const rawLocations = locations.rows.map(x => x.location);
+
+    const cleanLocations = [];
+
+    const locationRules = [
+      { label: "Remote", keys: ["remote"] },
+      { label: "Bangalore", keys: ["bangalore", "bengaluru", "banglore"] },
+      { label: "Hyderabad", keys: ["hyderabad"] },
+      { label: "Pune", keys: ["pune"] },
+      { label: "Mumbai", keys: ["mumbai", "bombay", "navi mumbai"] },
+      { label: "Chennai", keys: ["chennai", "madras"] },
+      { label: "Delhi NCR", keys: ["delhi", "noida", "gurgaon", "gurugram"] },
+      { label: "Kolkata", keys: ["kolkata", "calcutta"] },
+      { label: "Ahmedabad", keys: ["ahmedabad"] },
+      { label: "Coimbatore", keys: ["coimbatore"] },
+      { label: "India", keys: ["india", "ind"] }
+    ];
+
+    for (const rule of locationRules) {
+      const found = rawLocations.some(loc => {
+        const lower = String(loc).toLowerCase();
+        return rule.keys.some(k => lower.includes(k));
+      });
+
+      if (found) cleanLocations.push(rule.label);
+    }
+
+    res.json({
+      success: true,
+
+      locations: cleanLocations,
+
+      companies: companies.rows.map(x => x.company),
+
+      work_modes: ["Remote", "Hybrid", "Onsite"],
+
+      job_types: ["Full Time", "Internship", "Contract", "Part Time", "Trainee"],
+
+      experiences: ["Freshers", "0-1 yrs", "0-2 yrs", "1-3 yrs", "3+ yrs"],
+
+      categories: [
+        "Software Engineering",
+        "Data Analytics",
+        "Product",
+        "Design",
+        "Business",
+        "Sales",
+        "Marketing",
+        "Operations",
+        "Support",
+        "Finance",
+        "HR"
+      ]
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+
+// ======================================
+// INTERNSHIP FILTER VALUES API
+// ======================================
+
+app.get("/api/internships/filters", async (req, res) => {
+  try {
+    const [locations, companies, types, batches, eligibility, categories] =
+      await Promise.all([
+        pool.query(`
+          SELECT DISTINCT location
+          FROM internships
+          WHERE location IS NOT NULL
+          AND location != ''
+          AND is_active = true
+          LIMIT 1000
+        `),
+
+        pool.query(`
+          SELECT DISTINCT company
+          FROM internships
+          WHERE company IS NOT NULL
+          AND company != ''
+          AND is_active = true
+          ORDER BY company ASC
+          LIMIT 200
+        `),
+
+        pool.query(`
+          SELECT DISTINCT internship_type
+          FROM internships
+          WHERE internship_type IS NOT NULL
+          AND internship_type != ''
+          AND is_active = true
+        `),
+
+        pool.query(`
+          SELECT DISTINCT batch
+          FROM internships
+          WHERE batch IS NOT NULL
+          AND batch != ''
+          AND LOWER(batch) != 'not specified'
+          AND is_active = true
+        `),
+
+        pool.query(`
+          SELECT DISTINCT eligibility
+          FROM internships
+          WHERE eligibility IS NOT NULL
+          AND eligibility != ''
+          AND LOWER(eligibility) != 'not specified'
+          AND is_active = true
+        `),
+
+        pool.query(`
+          SELECT DISTINCT category
+          FROM internships
+          WHERE category IS NOT NULL
+          AND category != ''
+          AND is_active = true
+        `)
+      ]);
+
+    const rawLocations = locations.rows.map(x => x.location);
+    const rawTypes = types.rows.map(x => x.internship_type);
+    const rawBatches = batches.rows.map(x => x.batch);
+    const rawEligibility = eligibility.rows.map(x => x.eligibility);
+    const rawCategories = categories.rows.map(x => x.category);
+
+    function matchOptions(rawValues, rules) {
+      const output = [];
+
+      for (const rule of rules) {
+        const found = rawValues.some(value => {
+          const lower = String(value).toLowerCase();
+          return rule.keys.some(k => lower.includes(k));
+        });
+
+        if (found) output.push(rule.label);
+      }
+
+      return output;
+    }
+
+    const cleanLocations = matchOptions(rawLocations, [
+      { label: "Remote", keys: ["remote", "home based", "worldwide"] },
+      { label: "Bangalore", keys: ["bangalore", "bengaluru", "banglore"] },
+      { label: "Hyderabad", keys: ["hyderabad"] },
+      { label: "Pune", keys: ["pune"] },
+      { label: "Mumbai", keys: ["mumbai", "bombay", "navi mumbai"] },
+      { label: "Chennai", keys: ["chennai", "madras"] },
+      { label: "Delhi NCR", keys: ["delhi", "noida", "gurgaon", "gurugram"] },
+      { label: "Kolkata", keys: ["kolkata", "calcutta"] },
+      { label: "Ahmedabad", keys: ["ahmedabad"] },
+      { label: "India", keys: ["india", "ind"] },
+      { label: "USA", keys: ["united states", "usa", " us", "california", "new york", "texas"] },
+      { label: "Europe", keys: ["london", "berlin", "amsterdam", "paris", "spain", "germany", "netherlands"] },
+      { label: "Canada", keys: ["canada", "toronto", "vancouver"] },
+      { label: "Singapore", keys: ["singapore"] }
+    ]);
+
+    const cleanTypes = matchOptions(rawTypes, [
+      { label: "Internship", keys: ["internship", "intern"] },
+      { label: "Summer Internship", keys: ["summer"] },
+      { label: "Graduate Internship", keys: ["graduate"] },
+      { label: "Trainee", keys: ["trainee"] },
+      { label: "Apprenticeship", keys: ["apprentice", "apprenticeship"] },
+      { label: "Co-op Internship", keys: ["co-op", "coop"] }
+    ]);
+
+    const cleanBatches = matchOptions(rawBatches, [
+      { label: "2024", keys: ["2024"] },
+      { label: "2025", keys: ["2025"] },
+      { label: "2026", keys: ["2026"] },
+      { label: "2027", keys: ["2027"] },
+      { label: "2028", keys: ["2028"] }
+    ]);
+
+    const cleanEligibility = matchOptions(rawEligibility, [
+      { label: "B.Tech", keys: ["b.tech", "btech"] },
+      { label: "B.E", keys: ["b.e", "be degree"] },
+      { label: "BCA", keys: ["bca"] },
+      { label: "B.Sc", keys: ["b.sc", "bsc"] },
+      { label: "M.Tech", keys: ["m.tech", "mtech"] },
+      { label: "MCA", keys: ["mca"] },
+      { label: "MBA", keys: ["mba"] },
+      { label: "Bachelor's Degree", keys: ["bachelor"] },
+      { label: "Master's Degree", keys: ["master"] },
+      { label: "Students", keys: ["student"] }
+    ]);
+
+    res.json({
+      success: true,
+      locations: cleanLocations,
+      companies: companies.rows.map(x => x.company),
+      work_modes: ["Remote", "Hybrid", "Onsite"],
+      internship_types: cleanTypes.length ? cleanTypes : ["Internship"],
+      batches: cleanBatches,
+      eligibility: cleanEligibility,
+      categories: rawCategories.filter(x => x && x.toLowerCase() !== "general")
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
 // ======================================
 // START SERVER
 // ======================================
