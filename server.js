@@ -559,6 +559,143 @@ app.get("/api/internships/latest", async (req, res) => {
 });
 
 // ======================================
+// GLOBAL SEARCH API
+// ======================================
+
+app.get("/api/search", async (req, res) => {
+
+  try {
+
+    const q = (req.query.q || "").trim();
+
+    if (!q) {
+      return res.json({
+        success: true,
+        jobs: [],
+        internships: [],
+        companies: [],
+        suggestions: []
+      });
+    }
+
+    const keyword = `%${q}%`;
+
+    // ======================================
+    // JOB SEARCH
+    // ======================================
+
+    const jobsResult = await pool.query(
+      `
+      SELECT
+        id,
+        title,
+        company,
+        location,
+        company_logo,
+        apply_link,
+        category,
+        experience,
+        work_mode,
+        salary
+      FROM jobs
+      WHERE is_active = true
+      AND (
+        LOWER(title) LIKE LOWER($1)
+        OR LOWER(company) LIKE LOWER($1)
+        OR LOWER(location) LIKE LOWER($1)
+        OR LOWER(COALESCE(skills, '')) LIKE LOWER($1)
+        OR LOWER(COALESCE(category, '')) LIKE LOWER($1)
+      )
+      ORDER BY source_priority DESC, created_at DESC
+      LIMIT 15
+      `,
+      [keyword]
+    );
+
+    // ======================================
+    // INTERNSHIP SEARCH
+    // ======================================
+
+    const internshipsResult = await pool.query(
+      `
+      SELECT
+        id,
+        title,
+        company,
+        location,
+        company_logo,
+        apply_link,
+        category,
+        internship_type,
+        work_mode,
+        stipend
+      FROM internships
+      WHERE is_active = true
+      AND (
+        LOWER(title) LIKE LOWER($1)
+        OR LOWER(company) LIKE LOWER($1)
+        OR LOWER(location) LIKE LOWER($1)
+        OR LOWER(COALESCE(skills, '')) LIKE LOWER($1)
+        OR LOWER(COALESCE(category, '')) LIKE LOWER($1)
+      )
+      ORDER BY created_at DESC
+      LIMIT 15
+      `,
+      [keyword]
+    );
+
+    // ======================================
+    // COMPANY SUGGESTIONS
+    // ======================================
+
+    const companiesResult = await pool.query(
+      `
+      SELECT DISTINCT company
+      FROM jobs
+      WHERE is_active = true
+      AND LOWER(company) LIKE LOWER($1)
+      LIMIT 10
+      `,
+      [keyword]
+    );
+
+    // ======================================
+    // TRENDING / SMART SUGGESTIONS
+    // ======================================
+
+    const suggestions = [
+      `${q} Jobs`,
+      `${q} Internship`,
+      `Remote ${q} Jobs`,
+      `${q} Fresher Jobs`,
+      `${q} Developer`,
+      `${q} Engineer`
+    ];
+
+    res.json({
+      success: true,
+
+      jobs: jobsResult.rows,
+
+      internships: internshipsResult.rows,
+
+      companies: companiesResult.rows.map(x => x.company),
+
+      suggestions: suggestions
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+
+  }
+
+});
+
+// ======================================
 // GET SINGLE INTERNSHIP
 // ======================================
 
